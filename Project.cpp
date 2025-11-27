@@ -3,13 +3,42 @@
 #include <string>
 #include <sstream>
 #include <limits>
+#include <iomanip>
 using namespace std;
+
+// Structure
+struct Borrower {
+    string name;
+    string address;
+    string contact;
+    string borrowedBooks[10];
+    int borrowedCount = 0;
+};
+
+struct Book {
+    string title;
+    string author;
+    string ISBN;
+    int totalCopies;
+    int availableCopies;
+};
+
 
 // Function declarations
 void createAccount();
 void login();
 void resetPassword();
-void borrowerManagement(const string& adminID); // After Login
+
+void borrowerManagement(const string& adminID);
+void addBorrower(Borrower borrowers[], int &count, int maxBorrowers);
+void showAllBorrowers(Borrower borrowers[], int count);
+void loadBorrowers(Borrower borrowers[], int &count);
+void saveBorrowers(Borrower borrowers[], int count);
+void bookManagement();
+void addBook(Book books[], int &count, int maxBooks);
+void showAllBooks(Book books[], int count);
+
+
 
 int main() {
     string input;
@@ -21,9 +50,8 @@ int main() {
         cout << "3. Reset Password\n";
         cout << "4. Quit\n";
         cout << "Enter your choice: ";
-        getline(cin, input); // read entire line
         cin >> choice;
-        cin.ignore(); // Clear newline character from input buffer
+        cin.ignore();
 
         switch (choice) {
         case 1:
@@ -152,23 +180,137 @@ void resetPassword() {
 
 // --- Borrower Management ---
 void borrowerManagement(const string& adminID) {
-    cout << "\n===== Borrower Management Section =====\n";
-    cout << "Welcome, " << adminID << "!\n";
+    const int MAX_BORROWERS = 100;
+    static Borrower borrowers[MAX_BORROWERS];  
+    static int borrowerCount = 0;
+
+    loadBorrowers(borrowers, borrowerCount);
+
+    int choice;
+
+    do {
+        cout << "\n===== BORROWER MANAGEMENT =====\n";
+        cout << "Welcome, " << adminID << "!\n";
+        cout << "1. Add New Borrower\n";
+        cout << "2. Show All Borrowers\n";
+        cout << "3. Exit to Main Menu\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+        cin.ignore();
+
+        switch (choice) {
+        case 1:
+            addBorrower(borrowers, borrowerCount, MAX_BORROWERS);
+            saveBorrowers(borrowers, borrowerCount);
+            break;
+        case 2:
+            showAllBorrowers(borrowers, borrowerCount);
+            break;
+        case 3:
+            cout << "Returning to Main Menu...\n";
+            break;
+        default:
+            cout << "Invalid choice. Please try again.\n";
+        }
+    } while (choice != 3);
 }
 
-struct Book {
-    string title;
-    string author;
-    string ISBN;
-    int totalCopies;
-    int availableCopies;
-};
+void loadBorrowers(Borrower borrowers[], int &count) {
+    ifstream file("borrowers.txt");
+    if (!file) return;
 
+    string line;
+    count = 0;
 
-void addBook(Book books[], int &count, int maxBooks);
-void showAllBooks(Book books[], int count);
+    while (getline(file, line)) {
+        if (line.empty()) continue;
 
-int main() {
+        stringstream ss(line);
+        Borrower b;
+
+        getline(ss, b.name, '|');
+        getline(ss, b.address, '|');
+        getline(ss, b.contact, '|');
+
+        ss >> b.borrowedCount;
+        ss.ignore();
+
+        for (int i = 0; i < b.borrowedCount; i++) {
+            getline(file, b.borrowedBooks[i]);
+        }
+
+        borrowers[count++] = b;
+    }
+}
+
+void saveBorrowers(Borrower borrowers[], int count) {
+    ofstream file("borrowers.txt");
+
+    for (int i = 0; i < count; i++) {
+        file << borrowers[i].name << "|"
+             << borrowers[i].address << "|"
+             << borrowers[i].contact << "|"
+             << borrowers[i].borrowedCount << "\n";
+
+        for (int j = 0; j < borrowers[i].borrowedCount; j++) {
+            file << borrowers[i].borrowedBooks[j] << "\n";
+        }
+    }
+}
+
+void addBorrower(Borrower borrowers[], int &count, int maxBorrowers) {
+    if (count >= maxBorrowers) {
+        cout << "\nBorrower list is full!\n";
+        return;
+    }
+
+    Borrower newBorrower;
+
+    cout << "\nEnter Borrower Name: ";
+    getline(cin, newBorrower.name);
+
+    cout << "Enter Address: ";
+    getline(cin, newBorrower.address);
+
+    cout << "Enter Contact Number: ";
+    getline(cin, newBorrower.contact);
+
+    newBorrower.borrowedCount = 0; // no books borrowed yet
+
+    borrowers[count++] = newBorrower;
+
+    cout << "\nBorrower added successfully!\n";
+}
+
+void showAllBorrowers(Borrower borrowers[], int count) {
+    if (count == 0) {
+        cout << "\nNo borrowers found.\n";
+        return;
+    }
+
+    cout << "\n===== Borrower List =====\n";
+
+    for (int i = 0; i < count; i++) {
+        cout << "\nBorrower #" << (i + 1) << ":\n";
+        cout << "Name: " << borrowers[i].name << endl;
+        cout << "Address: " << borrowers[i].address << endl;
+        cout << "Contact: " << borrowers[i].contact << endl;
+
+        cout << "Borrowed Books: ";
+
+        if (borrowers[i].borrowedCount == 0) {
+            cout << "None\n";
+        } else {
+            cout << endl;
+            for (int j = 0; j < borrowers[i].borrowedCount; j++) {
+                cout << "  - " << borrowers[i].borrowedBooks[j] << endl;
+            }
+        }
+    }
+}
+
+// --- Book Management ---
+void bookManagement() {
     const int MAX_BOOKS = 100;
     Book books[MAX_BOOKS];
     int bookCount = 0;
@@ -198,7 +340,7 @@ int main() {
         }
     } while (choice != 3);
 
-    return 0;
+    return;
 }
 
 
