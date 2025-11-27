@@ -392,3 +392,57 @@ void showAllBooks(Book books[], int count) {
              << endl;
     }
 }
+
+// -------- Borrow / Return --------
+void borrowBook(Book books[], int bookCount, Borrower borrowers[], int borrowerCount) {
+    string borrowerName, bookTitle;
+    cout << "\nEnter borrower name: "; getline(cin, borrowerName);
+    cout << "Enter book title to borrow: "; getline(cin, bookTitle);
+
+    int bookIndex = -1;
+    for (int i = 0; i < bookCount; i++) {
+        if (books[i].title == bookTitle) { bookIndex = i; break; }
+    }
+    if (bookIndex == -1) { cout << "Book not found.\n"; return; }
+    if (books[bookIndex].availableCopies == 0) { cout << "No copies available.\n"; return; }
+
+    int borrowerIndex = -1;
+    for (int i = 0; i < borrowerCount; i++) {
+        if (borrowers[i].name == borrowerName) { borrowerIndex = i; break; }
+    }
+    if (borrowerIndex == -1) { cout << "Borrower not found.\n"; return; }
+
+    borrowers[borrowerIndex].borrowedBooks[borrowers[borrowerIndex].borrowedCount] = bookTitle;
+    borrowers[borrowerIndex].borrowedCount++;
+    books[bookIndex].availableCopies--;
+    cout << "Book borrowed successfully.\n";
+}
+
+void returnBook(Book books[], int bookCount, Borrower borrowers[], int borrowerCount) {
+    string borrowerName, bookTitle;
+    cout << "\nEnter borrower name: "; getline(cin, borrowerName);
+    cout << "Enter book title to return: "; getline(cin, bookTitle);
+
+    int borrowerIndex = -1;
+    for (int i = 0; i < borrowerCount; i++) {
+        if (borrowers[i].name == borrowerName) { borrowerIndex = i; break; }
+    }
+    if (borrowerIndex == -1) { cout << "Borrower not found.\n"; return; }
+
+    int pos = -1;
+    for (int i = 0; i < borrowers[borrowerIndex].borrowedCount; i++) {
+        if (borrowers[borrowerIndex].borrowedBooks[i] == bookTitle) { pos = i; break; }
+    }
+    if (pos == -1) { cout << "This borrower did not borrow that book.\n"; return; }
+
+    for (int i = pos; i < borrowers[borrowerIndex].borrowedCount - 1; i++) {
+        borrowers[borrowerIndex].borrowedBooks[i] = borrowers[borrowerIndex].borrowedBooks[i + 1];
+    }
+    borrowers[borrowerIndex].borrowedCount--;
+
+    for (int i = 0; i < bookCount; i++) {
+        if (books[i].title == bookTitle) { books[i].availableCopies++; break; }
+    }
+
+    cout << "Book returned successfully.\n";
+}
