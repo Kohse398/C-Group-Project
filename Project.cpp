@@ -12,7 +12,7 @@ struct Borrower {
     string address;
     string contact;
     string borrowedBooks[10];
-    int borrowedCount = 0;
+    int borrowedListCount = 0;
 };
 
 struct Book {
@@ -29,14 +29,22 @@ void createAccount();
 void login();
 void resetPassword();
 
+void mainMenu(const string& adminID);
+
 void borrowerManagement(const string& adminID);
 void addBorrower(Borrower borrowers[], int &count, int maxBorrowers);
 void showAllBorrowers(Borrower borrowers[], int count);
 void loadBorrowers(Borrower borrowers[], int &count);
 void saveBorrowers(Borrower borrowers[], int count);
+
 void bookManagement();
 void addBook(Book books[], int &count, int maxBooks);
 void showAllBooks(Book books[], int count);
+void saveBooks(Book books[], int count);
+void loadBooks(Book books[], int &count);
+
+void borrowBook(Book books[], int bookCount, Borrower borrowers[], int borrowerCount);
+void returnBook(Book books[], int bookCount, Borrower borrowers[], int borrowerCount);
 
 
 
@@ -120,7 +128,7 @@ void login() {
 
     if (found) { //Login Success
         cout << "\nLogin successful! Welcome, " << id << "!\n";
-        borrowerManagement(id);
+        mainMenu(id);
     } else {
         cout << "Invalid ID or Password.\n";
     }
@@ -177,6 +185,47 @@ void resetPassword() {
         cout << "Admin ID not found.\n";
     }
 }
+// --- Main Menu Functions ---
+void mainMenu(const string& adminID) {
+    static const int MAX_BOOKS = 100;
+    static const int MAX_BORROWERS = 100;
+
+    static Book books[MAX_BOOKS];
+    static int bookCount = 0;
+
+    static Borrower borrowers[MAX_BORROWERS];
+    static int borrowerCount = 0;
+
+    loadBorrowers(borrowers, borrowerCount);
+
+    int choice;
+    do {
+        cout << "\n===== MAIN MENU =====\n" << "1. Borrowers Management\n" << "2. Books Management\n" << "3. Borrow Books\n" << "4. Return Books\n" << "5. Logouts\n" << "Enter your choice: ";
+        cin >> choice;
+        cin.ignore(); 
+        switch (choice) {
+        case 1:
+            borrowerManagement(adminID);
+            break;
+        case 2:
+            bookManagement();
+            break;
+        case 3:
+            borrowBook(books, bookCount, borrowers, borrowerCount);
+            saveBorrowers(borrowers, borrowerCount);
+            break;
+        case 4:
+            returnBook(books, bookCount, borrowers, borrowerCount);
+            saveBorrowers(borrowers, borrowerCount);
+            break;
+        case 5:
+            cout << "Logging out...\n";
+            break;
+        default:
+            cout << "Invalid choice. Please only use 1-5.\n";
+        }
+    } while (choice != 5);
+}
 
 // --- Borrower Management ---
 void borrowerManagement(const string& adminID) {
@@ -207,10 +256,11 @@ void borrowerManagement(const string& adminID) {
             showAllBorrowers(borrowers, borrowerCount);
             break;
         case 3:
-            cout << "Returning to Main Menu...\n";
+            cout << "borrowers.txt is saved\n";
+            cout << "Returning to the Main Menu...\n";
             break;
         default:
-            cout << "Invalid choice. Please try again.\n";
+            cout << "Invalid choice. Please only use 1-3.\n";
         }
     } while (choice != 3);
 }
@@ -228,14 +278,14 @@ void loadBorrowers(Borrower borrowers[], int &count) {
         stringstream ss(line);
         Borrower b;
 
-        getline(ss, b.name, '|');
-        getline(ss, b.address, '|');
-        getline(ss, b.contact, '|');
+        getline(ss, b.name, ' ');
+        getline(ss, b.address, ' ');
+        getline(ss, b.contact, ' ');
 
-        ss >> b.borrowedCount;
+        ss >> b.borrowedListCount;
         ss.ignore();
 
-        for (int i = 0; i < b.borrowedCount; i++) {
+        for (int i = 0; i < b.borrowedListCount; i++) {
             getline(file, b.borrowedBooks[i]);
         }
 
@@ -247,12 +297,12 @@ void saveBorrowers(Borrower borrowers[], int count) {
     ofstream file("borrowers.txt");
 
     for (int i = 0; i < count; i++) {
-        file << borrowers[i].name << "|"
-             << borrowers[i].address << "|"
-             << borrowers[i].contact << "|"
-             << borrowers[i].borrowedCount << "\n";
+        file << borrowers[i].name << " "
+             << borrowers[i].address << " "
+             << borrowers[i].contact << " "
+             << borrowers[i].borrowedListCount << "\n";
 
-        for (int j = 0; j < borrowers[i].borrowedCount; j++) {
+        for (int j = 0; j < borrowers[i].borrowedListCount; j++) {
             file << borrowers[i].borrowedBooks[j] << "\n";
         }
     }
@@ -275,37 +325,39 @@ void addBorrower(Borrower borrowers[], int &count, int maxBorrowers) {
     cout << "Enter Contact Number: ";
     getline(cin, newBorrower.contact);
 
-    newBorrower.borrowedCount = 0; // no books borrowed yet
+    newBorrower.borrowedListCount = 0;
 
     borrowers[count++] = newBorrower;
 
-    cout << "\nBorrower added successfully!\n";
+    cout << "\nBorrower " << newBorrower.name << " added successfully!\n";
 }
 
 void showAllBorrowers(Borrower borrowers[], int count) {
     if (count == 0) {
-        cout << "\nNo borrowers found.\n";
+        cout << "\nNo borrowers found in the system.\n";
         return;
     }
 
     cout << "\n===== Borrower List =====\n";
 
+
     for (int i = 0; i < count; i++) {
-        cout << "\nBorrower #" << (i + 1) << ":\n";
-        cout << "Name: " << borrowers[i].name << endl;
-        cout << "Address: " << borrowers[i].address << endl;
-        cout << "Contact: " << borrowers[i].contact << endl;
+        cout << left << setw(20) << "Name" << setw(35) << "Address" << setw(20) << "Contact" << setw(20) << endl;
+        cout << string(70, '-') << endl;
+        cout << left << setw(20) << borrowers[i].name << setw(35) << borrowers[i].address << setw(20) << borrowers[i].contact << endl;
 
-        cout << "Borrowed Books: ";
+        cout << "Borrowed Books List: ";
 
-        if (borrowers[i].borrowedCount == 0) {
+        if (borrowers[i].borrowedListCount == 0) {
             cout << "None\n";
         } else {
             cout << endl;
-            for (int j = 0; j < borrowers[i].borrowedCount; j++) {
+            for (int j = 0; j < borrowers[i].borrowedListCount; j++) {
                 cout << "  - " << borrowers[i].borrowedBooks[j] << endl;
             }
         }
+        
+        cout << "\n";
     }
 }
 
@@ -315,12 +367,13 @@ void bookManagement() {
     Book books[MAX_BOOKS];
     int bookCount = 0;
     int choice;
+    loadBooks(books, bookCount);
 
     do {
         cout << "\n===== BOOK MANAGEMENT MENU =====\n";
         cout << "1. Add New Book\n";
         cout << "2. Show All Books\n";
-        cout << "3. Exit\n";
+        cout << "3. Main Menu\n";
         cout << "Enter your choice: ";
         cin >> choice;
         cin.ignore(); 
@@ -328,15 +381,18 @@ void bookManagement() {
         switch (choice) {
         case 1:
             addBook(books, bookCount, MAX_BOOKS);
+            saveBooks(books, bookCount);
             break;
         case 2:
             showAllBooks(books, bookCount);
             break;
         case 3:
-            cout << "Exiting Book Management Module...\n";
+            cout << "books.txt is saved\n";
+            cout << "Returning to Main Menu...\n";
+            saveBooks(books, bookCount);
             break;
         default:
-            cout << "Invalid choice. Try again.\n";
+            cout << "Invalid choice. Please only use 1-3.\n";
         }
     } while (choice != 3);
 
@@ -364,85 +420,140 @@ void addBook(Book books[], int &count, int maxBooks) {
     newBook.availableCopies = newBook.totalCopies;
     books[count++] = newBook;
 
-    cout << "\nBook added successfully!\n";
+    cout << "\nBook " << newBook.title << " successfully added to the system!\n";
 }
 
 
 void showAllBooks(Book books[], int count) {
     if (count == 0) {
-        cout << "\nNo books in the system yet.\n";
+        cout << "\nNo books found in the system yet.\n";
         return;
     }
 
     cout << "\nCurrent Book Inventory:\n";
     cout << left << setw(30) << "Title" 
-         << setw(20) << "Author" 
-         << setw(15) << "ISBN" 
-         << setw(10) << "Available" 
-         << setw(10) << "Total" << endl;
+         << setw(24) << "Author" 
+         << setw(24) << "ISBN" 
+         << setw(12) << "Available" 
+         << setw(8) << "Total" << endl;
 
-    cout << string(85, '-') << endl;
+    cout << string(98, '-') << endl;
 
     for (int i = 0; i < count; ++i) {
         cout << left << setw(30) << books[i].title
-             << setw(20) << books[i].author
-             << setw(15) << books[i].ISBN
-             << setw(10) << books[i].availableCopies
-             << setw(10) << books[i].totalCopies
+             << setw(24) << books[i].author
+             << setw(24) << books[i].ISBN
+             << setw(12) << books[i].availableCopies
+             << setw(8) << books[i].totalCopies
              << endl;
     }
 }
 
+void saveBooks(Book books[], int count) {
+    ofstream file("books.txt");
+    if (!file) {
+        cout << "Error. books.txt cannot be open\n";
+        return;
+    }
+
+    for (int i = 0; i < count; ++i) {
+        file << books[i].title << ";"
+             << books[i].author << ";"
+             << books[i].ISBN << ";"
+             << books[i].totalCopies << ";"
+             << books[i].availableCopies << "\n";
+    }
+
+    file.close();
+}
+
+void loadBooks(Book books[], int &count) {
+    ifstream file("books.txt");
+    if (!file) {
+        cout << "opening new a book.txt file\n";
+        return;
+    }
+
+    string line;
+    count = 0;
+
+    while (getline(file, line)) {
+        stringstream sss(line);
+        string totalCopiesStr, availableCopiesStr;
+        Book btxt;
+
+        getline(sss, btxt.title, ';');
+        getline(sss, btxt.author, ';');
+        getline(sss, btxt.ISBN, ';');
+        getline(sss, totalCopiesStr, ';');
+        btxt.totalCopies = stoi(totalCopiesStr);
+        getline(sss, availableCopiesStr, ';');
+        btxt.availableCopies = stoi(availableCopiesStr);
+        books[count++] = btxt;
+    }
+
+    file.close();
+}
+
+
 // -------- Borrow / Return --------
 void borrowBook(Book books[], int bookCount, Borrower borrowers[], int borrowerCount) {
     string borrowerName, bookTitle;
-    cout << "\nEnter borrower name: "; getline(cin, borrowerName);
-    cout << "Enter book title to borrow: "; getline(cin, bookTitle);
+    cout << "\nEnter the borrower name: "; 
+    getline(cin, borrowerName);
+    cout << "Enter book title " << borrowerName << " want to borrow: "; 
+    getline(cin, bookTitle);
+    loadBooks(books, bookCount);
 
     int bookIndex = -1;
     for (int i = 0; i < bookCount; i++) {
         if (books[i].title == bookTitle) { bookIndex = i; break; }
     }
-    if (bookIndex == -1) { cout << "Book not found.\n"; return; }
-    if (books[bookIndex].availableCopies == 0) { cout << "No copies available.\n"; return; }
+    if (bookIndex == -1) { cout << "Book " << bookTitle << " not found.\n"; return; }
+    if (books[bookIndex].availableCopies == 0) { cout << "No copies of " << bookTitle << " available.\n"; return; }
 
     int borrowerIndex = -1;
     for (int i = 0; i < borrowerCount; i++) {
         if (borrowers[i].name == borrowerName) { borrowerIndex = i; break; }
     }
-    if (borrowerIndex == -1) { cout << "Borrower not found.\n"; return; }
+    if (borrowerIndex == -1) { cout << "Borrower " << borrowerName << " not found.\n"; return; }
 
-    borrowers[borrowerIndex].borrowedBooks[borrowers[borrowerIndex].borrowedCount] = bookTitle;
-    borrowers[borrowerIndex].borrowedCount++;
+    borrowers[borrowerIndex].borrowedBooks[borrowers[borrowerIndex].borrowedListCount] = bookTitle;
+    borrowers[borrowerIndex].borrowedListCount++;
     books[bookIndex].availableCopies--;
-    cout << "Book borrowed successfully.\n";
+    cout << "Book borrowed by " << borrowerName << " successfully.\n";
+    
+    saveBooks(books, bookCount);
 }
 
 void returnBook(Book books[], int bookCount, Borrower borrowers[], int borrowerCount) {
     string borrowerName, bookTitle;
+    loadBooks(books, bookCount);
     cout << "\nEnter borrower name: "; getline(cin, borrowerName);
-    cout << "Enter book title to return: "; getline(cin, bookTitle);
+    cout << "Enter book title " << borrowerName << " wants to return: "; getline(cin, bookTitle);
+    
 
     int borrowerIndex = -1;
     for (int i = 0; i < borrowerCount; i++) {
         if (borrowers[i].name == borrowerName) { borrowerIndex = i; break; }
     }
-    if (borrowerIndex == -1) { cout << "Borrower not found.\n"; return; }
+    if (borrowerIndex == -1) { cout << "Borrower " << borrowerName << " not found.\n"; return; }
 
     int pos = -1;
-    for (int i = 0; i < borrowers[borrowerIndex].borrowedCount; i++) {
+    for (int i = 0; i < borrowers[borrowerIndex].borrowedListCount; i++) {
         if (borrowers[borrowerIndex].borrowedBooks[i] == bookTitle) { pos = i; break; }
     }
-    if (pos == -1) { cout << "This borrower did not borrow that book.\n"; return; }
+    if (pos == -1) { cout << "Borrower " << borrowerName << " did not borrow the book " << bookTitle << ".\n"; return; }
 
-    for (int i = pos; i < borrowers[borrowerIndex].borrowedCount - 1; i++) {
+    for (int i = pos; i < borrowers[borrowerIndex].borrowedListCount - 1; i++) {
         borrowers[borrowerIndex].borrowedBooks[i] = borrowers[borrowerIndex].borrowedBooks[i + 1];
     }
-    borrowers[borrowerIndex].borrowedCount--;
+    borrowers[borrowerIndex].borrowedListCount--;
 
     for (int i = 0; i < bookCount; i++) {
         if (books[i].title == bookTitle) { books[i].availableCopies++; break; }
     }
 
-    cout << "Book returned successfully.\n";
+    cout << "Book returned by " << borrowerName << " successfully.\n";
+    saveBooks(books, bookCount);
 }

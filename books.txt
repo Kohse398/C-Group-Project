@@ -1,0 +1,8 @@
+C++ For Beginner;Author 1;978-0-123456-47-2;5;4
+C++ For Intermediate;Author 2;978-1-234567-89-7;5;4
+C++ For Master;Author 3;978-3-456789-01-3;5;3
+C++ For Baby;Author 3;978-3-456789-01-3;5;4
+Python Basics;Author 4;978-0-987654-32-1;2;0
+Java Essentials;Author 5;978-1-876543-21-0;2;1
+Java Advanced;Author 6;978-3-765432-10-9;2;1
+Web Development;Author 7;978-0-654321-09-8;3;2
